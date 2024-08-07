@@ -12,6 +12,7 @@ class RedisClient {
     this.getAsync = promisify(this.client.get).bind(this.client);
     this.setAsync = promisify(this.client.set).bind(this.client);
     this.delAsync = promisify(this.client.del).bind(this.client);
+    this.setexAsync = promisify(this.client.setex).bind(this.client);
   }
 
   isAlive() {
@@ -23,7 +24,8 @@ class RedisClient {
   }
 
   async set(key, value, duration) {
-    this.client.set(key, value, 'EX', duration);
+    // Use `setex` for setting with expiration
+    return this.setexAsync(key, duration, value);
   }
 
   async del(key) {
