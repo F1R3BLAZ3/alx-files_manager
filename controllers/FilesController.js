@@ -13,6 +13,7 @@ if (!fs.existsSync(FILE_STORAGE_PATH)) {
 }
 
 class FilesController {
+  // Upload a file
   static async postUpload(req, res) {
     const token = req.headers['x-token'];
     if (!token) {
@@ -68,6 +69,64 @@ class FilesController {
       res.status(201).json(newFile);
     } catch (error) {
       console.error('Error uploading file:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  // Retrieve a file document by ID
+  static async getShow(req, res) {
+    const { id } = req.params;
+    const token = req.headers['x-token'];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(id), userId: new ObjectId(userId) });
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      res.status(200).json(file);
+    } catch (error) {
+      console.error('Error retrieving file:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  // Retrieve all files with pagination and optional parentId
+  static async getIndex(req, res) {
+    const token = req.headers['x-token'];
+    const { parentId = 0, page = 0 } = req.query;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const limit = 20; // Maximum items per page
+      const skip = parseInt(page, 10) * limit;
+
+      const files = await dbClient.db.collection('files')
+        .find({ userId: new ObjectId(userId), parentId: new ObjectId(parentId) })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      res.status(200).json(files);
+    } catch (error) {
+      console.error('Error retrieving files:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
