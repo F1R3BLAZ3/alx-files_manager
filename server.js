@@ -3,6 +3,7 @@
 import express from 'express';
 import routes from './routes/index.js';
 
+
 // Create an Express application
 const app = express();
 
