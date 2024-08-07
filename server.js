@@ -10,6 +10,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Load routes
+app.use(express.json());
 app.use('/', routes);
 
 // Start the server
